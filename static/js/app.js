@@ -87,7 +87,7 @@
             self.canplay = true;
 
             if(settings.autoplay) {
-                self.play();
+               self.play();
             }
 
             if(AudioAnalyser.enabled && !canplay) {
@@ -509,17 +509,28 @@
         self.container = document.createElement('div');
         self.container.classList.add('music');
         self.container.setAttribute('style', settings.container);
+        self.engines = [];
+        self.paths = [];
 
         script.parentNode.insertBefore(self.container, script);
 
         for(i = 0; i < settings.effects.length; i++) {
+
             canvas = document.createElement('canvas');
             effect = settings.effects[i];
+            // if (settings.effects[i].type === "3d"){
+            //     console.log("found it");
+            // } else {
 
+            // }
             self.canvases.push(canvas);
             canvas.setAttribute('style', effect.style);
             self.container.appendChild(canvas);
-            self.contexts.push(canvas.getContext('2d'));
+            self.contexts.push(canvas.getContext('3d'));
+            self.engines.push(new BABYLON.Engine(canvas, true));
+            self.paths.push([-7]);
+
+            
 
             resize((function (canvas, effect, i) {
                 return function () {
@@ -541,22 +552,28 @@
         self.audioanalyser.addEventListener('playing', function () {
             if(self.timeout === null) {
                 self.timeout = setInterval(self.draw.bind(self), settings.frame);
+                //self.clear;
             }
         });
 
         self.audioanalyser.addEventListener('title', function (data) {
             self.title.textContent = data.title;
         });
+
+        // self.audioanalyser.addEventListener('ended', function (){
+        //     self.clear();
+        // })
     }
 
-    Visualizer.prototype.clear = function () {
-        for(var i = 0; i < settings.effects.length; i++) {
-            this.contexts[i].clearRect(0, 0, this.canvases[i].width, this.canvases[i].height);
-        }
-    };
+    // Visualizer.prototype.clear = function () {
+    //     engines[0].stopRenderLoop();
+    //     engines[0].clear(BABYLON.Color3.Black(),false,false);
+    //     //if (engine.scenes.length!==0) {    //if more than 1 scene, while(engine.scenes.length>0) {    engine.scenes[0].dispose();}
+
+    // };
 
     Visualizer.prototype.draw = function () {
-        this.clear();
+        //this.clear();
 
         /* if audio is paused, cancel interval and clear canvases */
         if(this.audioanalyser.audio.paused) {
@@ -575,228 +592,50 @@
         analyser.getByteTimeDomainData(timeData);
         analyser.getByteFrequencyData(freqData);
 
+        //console.log(freqData);
+
+        // console.log(timeData);
+
+
         for(i = 0; i < settings.effects.length; i++) {
             switch(settings.effects[i].type) {
-            case 'fft':
-                Visualizer.drawFFT(settings.effects[i], this.canvases[i], this.contexts[i], freqData);
-                break;
-            case 'waveform':
-                Visualizer.drawWaveform(settings.effects[i], this.canvases[i], this.contexts[i], timeData);
+            // case 'fft':
+            //     Visualizer.drawFFT(settings.effects[i], this.canvases[i], this.contexts[i], freqData);
+            //     break;
+            // case 'waveform':
+            //     Visualizer.drawWaveform(settings.effects[i], this.canvases[i], this.contexts[i], timeData);
+            //     break;
+            case '3d':
+                Visualizer.draw3d(settings.effects[i], this.canvases[i], this.contexts[i], this.engines[i], freqData, this.paths[i]);
                 break;
             }
         }
     };
 
-    Visualizer.drawFFT = function (effect, canvas, context, data) {
+
+    Visualizer.draw3d = function(effect, canvas, context, engine, data, path) {
         var W = canvas.width,
             H = canvas.height,
-            D = effect.size,
-            L = effect.colors.length,
-            c, /* color index */
-            i, /* data index */
-            p, /* 1st canvas pixel row / col */
-            q, /* 2nd canvas pixel row / col */
-            v; /* volume */
+            D = data.length,
+            i = 0;
 
-        for(c = 0; c < L; c++) {
-            context.fillStyle = effect.colors[c];
-            switch(effect.position) {
-            case 'topright':
-                for(i = 0, p = 0; i < data.length && p < W; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, v * c, 1 - D, v - 1);
-                }
-                break;
-            case 'topleft':
-                for(i = 0, p = W; i < data.length && p >= 0; i++) {
-                    p = ~~(W - i * D);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, v * c, 1 - D, v - 1);
-                }
-                break;
-            case 'topmirror':
-                for(i = 0, p = W/2; i < data.length && p >= 0; i++) {
-                    p = ~~(W/2 - i * D);
-                    q = ~~(W/2 + i * D + 1);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, v * c, 1 - D, v - 1);
-                    context.fillRect(q, v * c, D - 1, v - 1);
-                }
-                break;
-            case 'bottomright':
-                for(i = 0, p = 0; i < data.length && p < W; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, H - v * c, 1 - D, 1 - v);
-                }
-                break;
-            case 'bottomleft':
-                for(i = 0, p = W; i < data.length && p >= 0; i++) {
-                    p = ~~(W - i * D);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, H - v * c, 1 - D, 1 - v);
-                }
-                break;
-            case 'bottommirror':
-                for(i = 0, p = W/2; i < data.length && p >= 0; i++) {
-                    p = ~~(W/2 - i * D);
-                    q = ~~(W/2 + i * D + 1);
-                    v = ~~(data[i] / 256 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, H - v * c, 1 - D, 1 - v);
-                    context.fillRect(q, H - v * c, D - 1, 1 - v);
-                }
-                break;
-            case 'leftdown':
-                for(i = 0, p = 0; i < data.length && p < H; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(v * c, p, v - 1, 1 - D);
-                }
-                break;
-            case 'leftup':
-                for(i = 0, p = 0; i < data.length && p < H; i++) {
-                    p = ~~(H - i * D);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(v * c, p, v - 1, 1 - D);
-                }
-                break;
-            case 'leftmirror':
-                for(i = 0, p = H/2; i < data.length && p >= 0; i++) {
-                    p = ~~(H/2 - i * D);
-                    q = ~~(H/2 + i * D + 1);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(v * c, p, v - 1, 1 - D);
-                    context.fillRect(v * c, q, v - 1, D - 1);
-                }
-                break;
-            case 'rightdown':
-                for(i = 0, p = 0; i < data.length && p < H; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(W - v * c, p, 1 - v, 1 - D);
-                }
-                break;
-            case 'rightup':
-                for(i = 0, p = H; i < data.length && p >= 0; i++) {
-                    p = ~~(H - i * D);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(W - v * c, p, 1 - v, 1 - D);
-                }
-                break;
-            case 'rightmirror':
-                for(i = 0, p = H/2; i < data.length && p >= 0; i++) {
-                    p = ~~(H/2 - i * D);
-                    q = ~~(H/2 + i * D + 1);
-                    v = ~~(data[i] / 256 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(W - v * c, p, 1 - v, 1 - D);
-                    context.fillRect(W - v * c, q, 1 - v, D - 1);
-                }
-                break;
-            case 'horizontalright':
-                for(i = 0, p = 0; i < data.length && p < W; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 512 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, ~~(H/2) + v * c, 1 - D, v - 1);
-                    context.fillRect(p, ~~(H/2) - v * c, 1 - D, 1 - v);
-                }
-                break;
-            case 'horizontalleft':
-                for(i = 0, p = W; i < data.length && p >= 0; i++) {
-                    p = ~~(W - i * D);
-                    v = ~~(data[i] / 512 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, ~~(H/2) + v * c, 1 - D, v - 1);
-                    context.fillRect(p, ~~(H/2) - v * c, 1 - D, 1 - v);
-                }
-                break;
-            case 'horizontalmirror':
-                for(i = 0, p = W/2; i < data.length && p >= 0; i++) {
-                    p = ~~(W/2 - i * D);
-                    q = ~~(W/2 + i * D + 1);
-                    v = ~~(data[i] / 512 * H / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(p, ~~(H/2) + v * c, 1 - D, v - 1);
-                    context.fillRect(q, ~~(H/2) + v * c, D - 1, v - 1);
-                    context.fillRect(p, ~~(H/2) - v * c, 1 - D, 1 - v);
-                    context.fillRect(q, ~~(H/2) - v * c, D - 1, 1 - v);
-                }
-                break;
-            case 'verticaldown':
-                for(i = 0, p = 0; i < data.length && p < H; i++) {
-                    p = ~~(i * D);
-                    v = ~~(data[i] / 512 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(~~(W/2) + v * c, p, v - 1, 1 - D);
-                    context.fillRect(~~(W/2) - v * c, p, 1 - v, 1 - D);
-                }
-                break;
-            case 'verticalup':
-                for(i = 0, p = H; i < data.length && p >= 0; i++) {
-                    p = ~~(H - i * D);
-                    v = ~~(data[i] / 512 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(~~(W/2) + v * c, p, v - 1, 1 - D);
-                    context.fillRect(~~(W/2) - v * c, p, 1 - v, 1 - D);
-                }
-                break;
-            case 'verticalmirror':
-                for(i = 0, p = H/2; i < data.length && p >= 0; i++) {
-                    p = ~~(H/2 - i * D);
-                    q = ~~(H/2 + i * D + 1);
-                    v = ~~(data[i] / 512 * W / L) + 1;
-                    v = (v === 1 ? 0 : v);
-                    context.fillRect(~~(W/2) + v * c, p, v - 1, 1 - D);
-                    context.fillRect(~~(W/2) + v * c, q, v - 1, D - 1);
-                    context.fillRect(~~(W/2) - v * c, p, 1 - v, 1 - D);
-                    context.fillRect(~~(W/2) - v * c, q, 1 - v, D - 1);
-                }
-                break;
-            }
-        }
-    };
 
-    Visualizer.drawWaveform = function (effect, canvas, context, data) {
-        var W = canvas.width,
-            H = canvas.height,
-            D = data.length, /* buffer length */
-            i = 0; /* data index */
 
-        context.strokeStyle = effect.color;
-        context.lineWidth = effect.size;
+        //console.log(data);
 
-        context.beginPath();
 
-        switch(effect.position) {
-        case 'horizontal':
-            context.moveTo((W + 1) * i / D, data[0] / 256 * H);
-            for(i = 1; i < D; i++) {
-                context.lineTo((W + 1) * i / D, data[i] / 256 * H);
-            }
-            break;
-        case 'vertical':
-            context.moveTo(data[0] / 256 * W, (H + 1) * i / D);
-            for(i = 1; i < D; i++) {
-                context.lineTo(data[i] / 256 * W, (H + 1) * i / D);
-            }
-            break;
-        }
 
-        context.stroke();
-    };
+        // call the createScene function
+        var scene = createScene();
+        scene.render();
+
+        // run the render loop
+        // engine.runRenderLoop(function(){
+        //     scene.render();
+        // });
+
+
+    }
 
     try {
         settings = JSON.parse(script.textContent.trim()||'{}');
