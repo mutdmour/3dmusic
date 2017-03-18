@@ -36,6 +36,7 @@
         })(),
         settings;
 
+
     function remove(node) {
         if(node.parentNode) {
             node.parentNode.removeChild(node);
@@ -154,8 +155,15 @@
     AudioAnalyser.prototype.play = function () {
         if(this.audio.paused && this.canplay && !this.seeking) {
             this.audio.play();
+            // console.log(this.audio.duration);
         }
     };
+
+    AudioAnalyser.prototype.getDuration = function () {
+        if (this.canplay){
+            return this.audio.duration;
+        }
+    }
 
     AudioAnalyser.prototype.pause = function () {
         if(!this.audio.paused) {
@@ -411,7 +419,7 @@
 
         link.setAttribute('type', 'text/css');
         link.setAttribute('rel', 'stylesheet');
-        link.setAttribute('href', '//html5music.herokuapp.com/css/style.css');
+        link.setAttribute('href', '/css/html5music.css');
 
         link.addEventListener('load', function () {
             setTime(0);
@@ -489,57 +497,174 @@
         case 'verticalmirror':
             return canvas.clientHeight / effect.size / 2;
         case 'horizontal':
+            ///console.log(canvas.clientWidth);
             return canvas.clientWidth;
         case 'vertical':
             return canvas.clientHeight;
         }
     }
 
+    var createScene = function(engine, canvas){
+                // create a basic BJS Scene object
+                var scene = new BABYLON.Scene(engine);
+
+                // create a FreeCamera, and set its position to (x:0, y:5, z:-10)
+                // var camera = new BABYLON.FreeCamera('camera1', new BABYLON.Vector3(0, 0,0), scene);
+
+                // target the camera to scene origin
+                //camera.setTarget(BABYLON.Vector3.Zero());
+
+                // attach the camera to the canvas
+
+                var arcCamera = new BABYLON.ArcRotateCamera("ArcRotateCamera", 1, .8, 10, new BABYLON.Vector3(0, 0, 0), scene);
+                arcCamera.setPosition(new BABYLON.Vector3(0, -5, 15));
+                arcCamera.target = new BABYLON.Vector3(0, 0, 0);
+                // // attach the camera to the canvas
+                // camera.attachControl(canvas, true);
+
+                scene.activeCamera = arcCamera;
+                arcCamera.attachControl(canvas, true);
+
+                // for (i=0; i<D; i++){
+                //     if (data[i] == 0){
+
+                //     } else {
+                //         path.push(data[i]);
+                //     }
+                // }
+                // console.log(path);
+
+                // create a basic light, aiming 0,1,0 - meaning, to the sky
+                var light = new BABYLON.HemisphericLight('light', new BABYLON.Vector3(1,1,1), scene);
+                // for(i = 0; i < path.length; i++) {
+                //     // x = i;
+                //     // y = 1;//data[i];
+                //     // z = 2;
+                //     var scale = .12
+                //     var box = BABYLON.Mesh.CreateBox("box", scale, scene);
+                //     box.position.x = -7+i*scale;
+                //     if (path[i]<1){
+                //         box.scaling.y = 1;
+                //     } else {
+                //         box.scaling.y = path[i];
+                //     }
+                //     //path.push(box);
+                //     //path.push(new BABYLON.Vector3(x, y, z));
+                // }
+
+
+
+
+    //            var ribbon = BABYLON.Mesh.CreateRibbon("ribbon", path, false, false, 0, scene);
+
+                // ribbon.position = new BABYLON.Vector3(-10, -10, 20);
+
+                                //// clelie spiral
+                              // // var spiralPath = [];
+                              //   var a = 3;
+                              //   var m = 5/4;
+                              //   var pi2 = Math.PI * 2;
+                              //   var step = pi2/100; // big determiner of size
+
+                              //   // theta for angle; a for radius, m for shape
+                              //   var clelie = function(theta ,a, m){
+                              //       x = a * Math.sin(m*theta) * Math.cos(theta);
+                              //       y = a * Math.sin(m*theta) * Math.sin(theta);
+                              //       z = a * Math.cos(m*theta);
+                              //       return new BABYLON.Vector3(x, y, z);
+                              //   }
+
+                              //   for (i = 0 ; i < data.length; i++){
+                              //       if (clelie(0, a, m) === clelie(this.theta, a, m) && this.theta > 0){
+                              //           //stop everything
+                              //       } else{
+                              //           this.path.push(clelie(this.theta, a, m));
+                              //           this.theta = this.theta + step;
+                              //       }
+                              //   }
+                              //   console.log(this.path);
+
+                              //   var lines = BABYLON.Mesh.CreateLines("par", this.path, this.scene);
+
+                // create a built-in "sphere" shape; its constructor takes 5 params: name, width, depth, subdivisions, scene
+                //var sphere = BABYLON.Mesh.CreateSphere('sphere1', 16, 2, scene);
+
+                // move the sphere upward 1/2 of its height
+                // var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+                // sphere.position.y = plusOrMinus * Math.floor((Math.random() * 4) + 1);
+                // var plusOrMinus = Math.random() < 0.5 ? -1 : 1;
+                // sphere.position.x = plusOrMinus * Math.floor((Math.random() * 4) + 1);
+
+                // create a built-in "ground" shape; its constructor takes the same 5 params as the sphere's one
+                //var ground = BABYLON.Mesh.CreateGround('ground1', 6, 6, 2, scene);
+
+                // return the created scene
+                return scene;
+            }
+
     function Visualizer() {
         var self = this,
-            i,
             canvas,
             effect;
 
+        effect = settings.effects[0];
+        //console.log(effect);
+        // console.log(self.effect)
+
         self.audioanalyser = new AudioAnalyser();
         self.timeout = null;
-        self.canvases = [];
-        self.contexts = [];
-        self.sizes = new Array(settings.effects.length);
+        
+        canvas = document.createElement('canvas');
+        canvas.setAttribute('style', effect.style);
+        // canvas.setAttribute('touch-action','none');
+        self.context = canvas.getContext('webgl');
+        // self.canvases = [];
+        // self.contexts = [];
+        self.size = null;
+        //self.sizes = new Array(1);
         self.container = document.createElement('div');
         self.container.classList.add('music');
         self.container.setAttribute('style', settings.container);
-        self.engines = [];
-        self.paths = [];
+        self.container.appendChild(canvas);
+        
+        self.z = 0;
+        self.t = 0;
+        // self.scenes = [];
+        // self.paths = [];
+
+
 
         script.parentNode.insertBefore(self.container, script);
 
-        for(i = 0; i < settings.effects.length; i++) {
+        // canvas = 
+        // effect = settings.effects[i];
+        // self.canvases.push(canvas);
+        self.engine = new BABYLON.Engine(canvas, true);
+        self.scene = createScene(self.engine, canvas);
 
-            canvas = document.createElement('canvas');
-            effect = settings.effects[i];
-            // if (settings.effects[i].type === "3d"){
-            //     console.log("found it");
-            // } else {
 
-            // }
-            self.canvases.push(canvas);
-            canvas.setAttribute('style', effect.style);
-            self.container.appendChild(canvas);
-            self.contexts.push(canvas.getContext('3d'));
-            self.engines.push(new BABYLON.Engine(canvas, true));
-            self.paths.push([-7]);
+        self.engine.runRenderLoop(function () {
+            self.scene.render();
+        });
+        // self.contexts.push(c);
+        // self.paths.push([-7]);
 
-            
+               //console.log(data);
 
-            resize((function (canvas, effect, i) {
-                return function () {
-                    canvas.width = canvas.clientWidth;
-                    canvas.height = canvas.clientHeight;
-                    self.sizes[i] = getMaxSizeNeeded(canvas, effect);
+        // call the createScene function
+        // var scene = createScene(self.engine);
+        // scene.render();           
+
+        resize((function (canvas, effect) {
+            return function () {
+                canvas.width = canvas.clientWidth;
+                //console.log(canvas.clientHeight);
+                canvas.height = canvas.clientHeight;
+                self.size = getMaxSizeNeeded(canvas, effect);
+                //console.log("yo");
                 };
-            }(canvas, effect, i)));
-        }
+            }(canvas, effect)));
+        // };
 
         makeControls(self.audioanalyser, self.container);
 
@@ -561,9 +686,11 @@
         });
 
         // self.audioanalyser.addEventListener('ended', function (){
-        //     self.clear();
+        //     console.log(self.all);
         // })
-    }
+
+        // self.all = [];
+    };
 
     // Visualizer.prototype.clear = function () {
     //     engines[0].stopRenderLoop();
@@ -574,7 +701,7 @@
 
     Visualizer.prototype.draw = function () {
         //this.clear();
-
+        // console.log("hello")
         /* if audio is paused, cancel interval and clear canvases */
         if(this.audioanalyser.audio.paused) {
             clearInterval(this.timeout);
@@ -583,51 +710,101 @@
         }
 
         var analyser = this.audioanalyser.analyser,
-            timeSize = Math.min(analyser.fftSize, Math.max.apply(Math, this.sizes)),
-            freqSize = Math.min(analyser.frequencyBinCount, Math.max.apply(Math, this.sizes)),
+            timeSize = Math.min(analyser.fftSize, this.size),
+            freqSize = Math.min(analyser.frequencyBinCount, this.size),
             timeData = new Uint8Array(timeSize),
             freqData = new Uint8Array(freqSize),
             i;
 
+        // console.log(this.sizes);
+        //console.log(freqData);
+
         analyser.getByteTimeDomainData(timeData);
         analyser.getByteFrequencyData(freqData);
 
-        //console.log(freqData);
+        var data = timeData;
+
+        var topPath = [];
+        // var bottomPath = [];
+        // for (i = 0; i < data.length; i++){
+        //     var x = i - 7;
+        //     topPath.push(new BABYLON.Vector3(x,timeData[i]/100,this.z));
+        //     bottomPath.push(new BABYLON.Vector3(x,0,this.z));
+        // }
+        // this.z = this.z + 1;
+
+        var spiralPath = [];
+        var parallelSpiralPath = [];
+        var parallelTopPath = [];
+        var a = .01;
+        // var b = .09;
+        var pi2 = Math.PI * 2;
+        var step = pi2 / 360; // big determiner of size
+        for (i = 0; i < data.length; i++){
+            var x = a * this.t * Math.cos(this.t);
+            var y = a * this.t * Math.sin(this.t);
+            spiralPath.push(new BABYLON.Vector3(x,y,0));
+            // console.log(this.t);
+            // if (this.t > pi2){
+            topPath.push(new BABYLON.Vector3(x,y,data[i]/50));
+            // } else {
+            //     topPath.push(new BABYLON.Vector3(x,y,data[i]/50));                
+            // }
+            x = x - .1 * Math.cos(this.t);
+            y = y - .1 * Math.sin(this.t);
+            parallelSpiralPath.push(new BABYLON.Vector3(x,y,0));
+            parallelTopPath.push(new BABYLON.Vector3(x,y,data[i]/50));
+            this.t = this.t + step;
+        }
+        this.t = this.t - step;
+
+        //var materialSphere1 = new BABYLON.StandardMaterial("texture1", this.scene);
+        //materialSphere1.wireframe = true;   
+
+        // var ribbon = BABYLON.Mesh.CreateRibbon("ribbon", [topPath, spiralPath], false, false, 0, this.scene);
+
+        var ribbon = BABYLON.Mesh.CreateRibbon("ribbon", [topPath, parallelTopPath, parallelSpiralPath,spiralPath], false, false, 0, this.scene);
+
+        //ribbon.material = materialSphere1;
+        // var cylinder = BABYLON.Mesh.CreateCylinder("cylinder", 3, 3, 3, 0, 1, this.scene);
+
+        //var lines = BABYLON.Mesh.CreateLines("par", spiralPath, this.scene);
+        //var lines = BABYLON.Mesh.CreateLines("par", parallelSpiralPath, this.scene);
+
+        //var sphere = BABYLON.Mesh.CreateSphere("sphere", Math.random()*10, 10.0, this.scene);
+
+        // console.log(freqData);
 
         // console.log(timeData);
 
 
-        for(i = 0; i < settings.effects.length; i++) {
-            switch(settings.effects[i].type) {
-            // case 'fft':
-            //     Visualizer.drawFFT(settings.effects[i], this.canvases[i], this.contexts[i], freqData);
-            //     break;
-            // case 'waveform':
-            //     Visualizer.drawWaveform(settings.effects[i], this.canvases[i], this.contexts[i], timeData);
-            //     break;
-            case '3d':
-                Visualizer.draw3d(settings.effects[i], this.canvases[i], this.contexts[i], this.engines[i], freqData, this.paths[i]);
-                break;
-            }
-        }
-    };
+
+    //     for(i = 0; i < settings.effects.length; i++) {
+    //         switch(settings.effects[i].type) {
+    //         // case 'fft':
+    //         //     Visualizer.drawFFT(settings.effects[i], this.canvases[i], this.contexts[i], freqData);
+    //         //     break;
+    //         // case 'waveform':
+    //         //     Visualizer.drawWaveform(settings.effects[i], this.canvases[i], this.contexts[i], timeData);
+    //         //     break;
+    //         case '3d':
+    //             //console.log(this.audioanalyser.settings.audio);
+    //             Visualizer.draw3d(settings.effects[i], this.canvas, this.context, this.scene, freqData, null);
+    //             break;
+    //         }
+    //     }
+    // };
 
 
-    Visualizer.draw3d = function(effect, canvas, context, engine, data, path) {
-        var W = canvas.width,
-            H = canvas.height,
-            D = data.length,
-            i = 0;
+    // Visualizer.draw3d = function(effect, canvas, context, scene, data, path) {
+    //     // var W = canvas.width,
+    //     //     H = canvas.height,
+    //     //     D = data.length,
+    //     //     i = 0;
 
+    //     scene.render();
 
-
-        //console.log(data);
-
-
-
-        // call the createScene function
-        var scene = createScene();
-        scene.render();
+ 
 
         // run the render loop
         // engine.runRenderLoop(function(){

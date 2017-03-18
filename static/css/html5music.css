@@ -1,13 +1,19 @@
 .music {
     position: relative;
     overflow: hidden;
-/*    -webkit-touch-callout: none;
+ /*   -webkit-touch-callout: none;
     -webkit-user-select: none;
     -khtml-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
     pointer-events: none;*/
+}
+
+.music, .music *, .music *:before, .music *:after {
+    -webkit-box-sizing: content-box;
+    -moz-box-sizing: content-box;
+    box-sizing: content-box;
 }
 
 .music .audio {
@@ -98,12 +104,14 @@
     -moz-border-radius: 6px;
     border-radius: 6px;
     background-color: #F8F8F8;
-    cursor: pointer;
+    cursor: -webkit-grab;
+    cursor: -moz-grab;
+    cursor: grab;
 }
 
 .music .audio .time {
     font-size: 13px;
-    margin: 2px 4px 2px 0;
+    margin: 4px 4px 4px 0;
 }
 
 .music .audio .speaker {
@@ -142,7 +150,15 @@
     -moz-border-radius: 6px;
     border-radius: 6px;
     background-color: #F8F8F8;
-    cursor: pointer;
+    cursor: -webkit-grab;
+    cursor: -moz-grab;
+    cursor: grab;
+}
+
+.music .audio .seekbtn:active, .music .audio .volbtn:active {
+    cursor: -webkit-grabbing;
+    cursor: -moz-grabbing;
+    cursor: grabbing;
 }
 
 [class^="icon-"], [class*=" icon-"] {

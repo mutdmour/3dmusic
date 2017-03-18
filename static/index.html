@@ -13,13 +13,15 @@
     </head>
     <body>
         <script src="/js/babylon.js"></script>
-        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
-
+        <script src="http://www.babylonjs.com/hand.minified-1.2.js"></script>
+<!--         <script src="/js/hand.js"></script>
+ --><!--         <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+ -->
         <script type="text/javascript" src="/js/app.js">
         {
             "autoplay": false,
             "volume": 1,
-            "size": 1024,
+            "size": 32, 
             "smoothing": 0.6,
             "mindecibels": -50,
             "maxdecibels": -15,
@@ -37,6 +39,11 @@
                 }
             ],
             "audio": [
+
+                {                
+                    "mp3": "/media/cakebytheocean.mp3",
+                    "title": "Cake by the Ocean"
+                },
                 {
                     "mp3": "/media/Mutasem.mp3",
                     "title": "Mutasem"
@@ -45,12 +52,13 @@
                     "mp3": "/media/Ali.mp3",
                     "title": "Ali"
                 }
-
             ]
         }
         </script>
-        <button href="#" class="button">Convert to .obj</button>
-    </body>
+<!--         <canvas id="renderCanvas"></canvas>
+ -->        
+<!--  <button href="#" class="button">Convert to .obj</button>
+ -->    </body>
     <style>
     .button {
         background-color: #4CAF50;
